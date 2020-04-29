@@ -1,0 +1,156 @@
+#ifndef BINOMIALHEAP_CPP
+#define BINOMIALHEAP_CPP
+
+#include "binomialheap.h"
+
+// constructor -------------------------------------------------------------------------
+
+template <typename V, typename Node_Comp>
+binomialHeap<V, Node_Comp>::binomialHeap() {
+
+}
+
+template <typename V, typename Node_Comp>
+binomialHeap<V, Node_Comp>::binomialHeap(const V key) {
+    _head = new  node<V>(key);
+}
+
+template <typename V, typename Node_Comp>
+binomialHeap<V, Node_Comp>::~binomialHeap() {
+    if (_head != NULL)
+        _head->InOrderDelete();
+}
+
+// insert -------------------------------------------------------------------------
+
+template <typename V, typename Node_Comp>
+void binomialHeap<V, Node_Comp>::Insert(const V key) {
+    binomialHeap<V, Node_Comp>* heap = new binomialHeap<V, Node_Comp>(key);
+    this->Merge(*heap);
+}
+
+// get -------------------------------------------------------------------------
+
+template <typename V, typename Node_Comp>
+const V binomialHeap<V, Node_Comp>::GetMinimum() {
+    if (_head == NULL)
+        return std::make_pair(INF, INF);
+    V min = _head->GetKey();
+    for (node<V> *curNode = _head; curNode != NULL; curNode = curNode->GetSib())
+        min = std::min(min, curNode->GetKey());
+    return min;
+}
+
+// extract min -------------------------------------------------------------------------
+
+template <typename V, typename Node_Comp>
+V binomialHeap<V, Node_Comp>::ExtractMin() {
+    if (_head == NULL)
+        return std::make_pair(INF, INF);
+    node<V>* min = _head;
+    node<V>* preMin = NULL;
+    for (node<V> *curNode = _head, *prevNode=NULL; curNode != NULL; prevNode = curNode, curNode = curNode->GetSib())
+        if (Node_Comp()(curNode->GetKey(), min->GetKey())) {
+            min = curNode;
+            preMin = prevNode;
+        }
+    if (preMin == NULL)
+        _head = min->GetSib();
+    else
+        preMin->SetSib(min->GetSib());
+    const V minimum = min->GetKey();
+    if (min->GetDegree() != 0) {
+        node<V>* prevNode = NULL;
+        for (node<V>* curNode = min->GetChild(); curNode != NULL;) {
+            node<V>* tmp = curNode->GetSib();
+            curNode->SetSib(prevNode);
+            prevNode = curNode;
+            curNode = tmp;
+        }
+        binomialHeap* heap = new binomialHeap;
+        heap->_head = prevNode;
+        this->Merge(*heap);
+    }
+    delete min;
+    return minimum;
+}
+
+// merge -------------------------------------------------------------------------
+
+template <typename V, typename Node_Comp>
+void binomialHeap<V, Node_Comp>::Merge(binomialHeap<V, Node_Comp>& heap) {
+    if (heap._head == NULL)
+        return;
+    if (this->_head == NULL) {
+        *this = heap;
+        heap._head = NULL;
+        return;
+    }
+    node<V>* pNode;
+    if (_head->GetDegree() < heap._head->GetDegree()) {
+        pNode = _head;
+        _head = _head->GetSib();
+    } else {
+        pNode = heap._head;
+        heap._head = heap._head->GetSib();
+    }
+    node<V>* curNode = pNode;
+    while (_head != NULL && heap._head != NULL)
+        if (_head->GetDegree() < heap._head->GetDegree()) {
+            curNode->SetSib(_head);
+            curNode = curNode->GetSib();
+            _head = _head->GetSib();
+        } else {
+            curNode->SetSib(heap._head);
+            curNode = curNode->GetSib();
+            heap._head = heap._head->GetSib();
+        }
+    while (_head != NULL) {
+        curNode->SetSib(_head);
+        curNode = curNode->GetSib();
+        _head = _head->GetSib();
+    }
+    while (heap._head != NULL) {
+        curNode->SetSib(heap._head);
+        curNode = curNode->GetSib();
+        heap._head = heap._head->GetSib();
+    }
+    node<V>* prevNode = NULL;
+    for (curNode = pNode; curNode != NULL && curNode->GetSib() != NULL;)
+        if (curNode->GetDegree() == curNode->GetSib()->GetDegree() &&
+                (curNode->GetSib()->GetSib() == NULL || curNode->GetSib()->GetSib()->GetDegree() != curNode->GetDegree() )) {
+            if (Node_Comp()(curNode->GetKey(), curNode->GetSib()->GetKey())) {
+                node<V>* tmp = curNode->GetSib()->GetSib();
+                curNode->GetSib()->SetSib(curNode->GetChild());
+                curNode->SetChild(curNode->GetSib());
+                curNode->SetSib(tmp);
+                curNode->SetDegree(curNode->GetDegree() + 1);
+            } else {
+                node<V>* tmp = curNode->GetSib();
+                curNode->SetSib(curNode->GetSib()->GetChild());
+                tmp->SetChild(curNode);
+                curNode = tmp;
+                if (prevNode == NULL)
+                    pNode = curNode;
+                else
+                    prevNode->SetSib(curNode);
+                curNode->SetDegree(curNode->GetDegree() + 1);
+            }
+        } else {
+            prevNode = curNode;
+            curNode = curNode->GetSib();
+        }
+    _head = pNode;
+    heap._head = NULL;
+    return;
+}
+
+// empty -------------------------------------------------------------------------
+
+template <typename V, typename Node_Comp>
+bool binomialHeap<V, Node_Comp>::Empty()
+{
+    return _head == NULL;
+}
+
+#endif // BINOMIALHEAP_CPP

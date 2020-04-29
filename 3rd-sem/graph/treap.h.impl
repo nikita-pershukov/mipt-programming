@@ -1,0 +1,150 @@
+#ifndef TREAP_CPP
+#define TREAP_CPP
+
+#include "treap.h"
+
+template <typename V, typename P>
+treap<V, P>::treap() {
+
+}
+
+template <typename V, typename P>
+treap<V, P>::~treap() {
+    if (_root != NULL)
+        _root->InOrderDelete();
+}
+
+template <typename V, typename P>
+treapnode<V, P>* treap<V, P>::GetRoot() {
+    return _root;
+}
+
+template <typename V, typename P>
+void treap<V, P>::SetRoot(treapnode<V, P> *root) {
+    _root = root;
+}
+
+template <typename V, typename P>
+void treap<V, P>::Insert(V value) {
+    Insert(value, rand());
+}
+
+template <typename V, typename P>
+void treap<V, P>::Insert(V value, P priority) {
+    treapnode<V, P>* new_item = new treapnode<V, P>(value, priority);
+    Insert(new_item);
+}
+
+template <typename V, typename P>
+void treap<V, P>::Insert(treapnode<V, P> *item) {
+    Insert(_root, item);
+}
+
+template <typename V, typename P>
+void treap<V, P>::Insert(treapnode<V, P> *&t, treapnode<V, P>* item) {
+    if (!t) {
+        t = item;
+        t->RefreshIndex();
+        return;
+    }
+    if (item->GetPriority() > t->GetPriority())
+        Split(t, item->GetLeft(), item->GetRight(), item->GetValue()), t = item;
+    else
+        Insert(item->GetValue() < t->GetValue() ? t->GetLeft() : t->GetRight(), item);
+    if (t != NULL)
+        t->RefreshIndex();
+}
+
+template <typename V, typename P>
+V treap<V, P>::FindIndex(int index) {
+    treapnode<V, P>* tmp = this->GetRoot();
+    while (tmp != NULL)
+    {
+        int cur_index = tmp->GetLeft() == NULL ? 0 : tmp->GetLeft()->GetIndex();
+        if (cur_index == index)
+            return tmp->GetValue();
+        tmp = cur_index > index ? tmp->GetLeft() : tmp->GetRight();
+        if (cur_index < index)
+            index -= cur_index + 1;
+    }
+    return -1;
+}
+
+template <typename V, typename P>
+int treap<V, P>::GetSize() {
+    return GetRoot()->GetIndex();
+}
+
+template <typename V, typename P>
+V treap<V, P>::GetValue() {
+    return _root->GetValue();
+}
+
+template <typename V, typename P>
+P treap<V, P>::GetPriority() {
+    return _root->GetPriority();
+}
+
+template <typename V, typename P>
+void treap<V, P>::Merge(treap<V, P> l, treap<V, P> r) {
+    Merge(this->GetRoot(), l.GetRoot(), r.GetRoot());
+    l.SetRoot(NULL);
+    r.SetRoot(NULL);
+}
+
+template <typename V, typename P>
+void treap<V, P>::Merge(treapnode<V, P>* &t, treapnode<V, P>* l, treapnode<V, P>* r) {
+    if (!l || !r) {
+            t = l ? l : r;
+            return;
+    }
+    if (l->GetPriority() > r->GetPriority())
+        Merge(l->GetRight(), l->GetRight(), r), t = l;
+    else
+        Merge(r->GetLeft(), l, r->GetLeft()), t = r;
+    if (t != NULL)
+        t->RefreshIndex();
+}
+
+template <typename V, typename P>
+void treap<V, P>::Split(treap<V, P> &l, treap<V, P> &r, V value) {
+    Split(this->GetRoot(), l.GetRoot(), r.GetRoot(), value);
+    this->SetRoot(NULL);
+}
+
+template <typename V, typename P>
+void treap<V, P>::Split(treapnode<V, P>* t, treapnode<V, P>* &l, treapnode<V, P>* &r, V value) {
+    if (!t) {
+        l = NULL;
+        r = NULL;
+        return;
+    }
+    if (value < t->GetValue())
+        Split(t->GetLeft(), l, t->GetLeft(), value), r = t;
+    else
+        Split(t->GetRight(), t->GetRight(), r, value), l = t;
+    if (t != NULL)
+        t->RefreshIndex();
+}
+
+template <typename V, typename P>
+void treap<V, P>::Erase(V value) {
+    Erase(_root, value);
+}
+
+template <typename V, typename P>
+void treap<V, P>::Erase(treapnode<V, P> *&t, V value) {
+    if (t->GetValue() == value)
+        Merge(t, t->GetLeft(), t->GetRight());
+    else
+        Erase(value < t->GetValue() ? t->GetLeft() : t->GetRight(), value);
+    if (t != NULL)
+        t->RefreshIndex();
+}
+
+template <typename V, typename P>
+void treap<V, P>::InOrderDelete() {
+    _root->InOrderDelete();
+}
+
+#endif // TREAP_CPP

@@ -1,0 +1,75 @@
+#ifndef TREAPNODE_CPP
+#define TREAPNODE_CPP
+
+#include "treapnode.h"
+
+template <typename V, typename P>
+treapnode<V, P>::treapnode() {
+
+}
+
+template <typename V, typename P>
+treapnode<V, P>::treapnode(V value, P priority): _value(value), _priority(priority) {
+
+}
+
+template <typename V, typename P>
+V treapnode<V, P>::GetValue() const {
+    if (this == NULL)
+        return 0;
+    return _value;
+}
+
+template <typename V, typename P>
+P treapnode<V, P>::GetPriority() const {
+    if (this == NULL)
+        return 0;
+    return _priority;
+}
+
+template <typename V, typename P>
+int treapnode<V, P>::GetIndex() const {
+    if (this == NULL)
+        return 0;
+    return _index;
+}
+
+template <typename V, typename P>
+treapnode<V, P>*& treapnode<V, P>::GetLeft() {
+    return _left;
+}
+
+template <typename V, typename P>
+treapnode<V, P>*& treapnode<V, P>::GetRight() {
+    return _right;
+}
+
+template <typename V, typename P>
+void treapnode<V, P>::SetLeft(treapnode<V, P> *left) {
+    _left = left;
+}
+
+template <typename V, typename P>
+void treapnode<V, P>::SetRight(treapnode<V, P> *right) {
+    _right = right;
+}
+
+template <typename V, typename P>
+void treapnode<V, P>::RefreshIndex() {
+    if (this == NULL)
+        return;
+    _index = 1 + _left->GetIndex() + _right->GetIndex();
+}
+
+template <typename V, typename P>
+void treapnode<V, P>::InOrderDelete() {
+    if (this == NULL)
+        return;
+    if (_left != NULL)
+        _left->InOrderDelete();
+    if (_right != NULL)
+        _right->InOrderDelete();
+    delete this;
+}
+
+#endif // TREAPNODE_CPP

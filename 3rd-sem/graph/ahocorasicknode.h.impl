@@ -1,0 +1,66 @@
+#ifndef AHOCORASICKNODE_CPP
+#define AHOCORASICKNODE_CPP
+
+#include "ahocorasicknode.h"
+
+ahoCorasickNode::ahoCorasickNode() {
+
+}
+
+bool ahoCorasickNode::GetLeaf() {
+    return _leaf;
+}
+
+int ahoCorasickNode::GetParent() {
+    return _p;
+}
+
+char ahoCorasickNode::GetParentChar() {
+    return _pch;
+}
+
+int ahoCorasickNode::GetLink() {
+    return _link;
+}
+
+int ahoCorasickNode::GetLeng() {
+    return _leng;
+}
+
+std::string ahoCorasickNode::GetWord() {
+    return _word;
+}
+
+std::map<char, int>& ahoCorasickNode::Next() {
+    return _next;
+}
+
+std::map<char, int>& ahoCorasickNode::Go() {
+    return _go;
+}
+
+void ahoCorasickNode::SetLeaf(const bool leaf) {
+    _leaf = leaf;
+}
+
+void ahoCorasickNode::SetParent(const int p) {
+    _p = p;
+}
+
+void ahoCorasickNode::SetParentChar(const char pch) {
+    _pch = pch;
+}
+
+void ahoCorasickNode::SetLink(const int link) {
+    _link = link;
+}
+
+void ahoCorasickNode::SetLeng(const int leng) {
+    _leng = leng;
+}
+
+void ahoCorasickNode::SetWord(const std::string word) {
+    _word = word;
+}
+
+#endif // AHOCORASICKNODE_CPP

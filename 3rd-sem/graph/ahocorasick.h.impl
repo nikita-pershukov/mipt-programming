@@ -1,0 +1,75 @@
+#ifndef ahoCorasick_CPP
+#define ahoCorasick_CPP
+
+#include "ahocorasick.h"
+
+ahoCorasick::ahoCorasick() {
+    ahoCorasickNode tmp;
+    _states.push_back(tmp);
+    _size = 1;
+}
+
+void ahoCorasick::AddString(const std::string& s) {
+    int v = 0;
+    for (int i = 0; i < (int)s.length(); ++i) {
+        char ch = s[i];
+        if (_states[v].Next().count(ch) == 0) {
+            ahoCorasickNode tmp;
+            tmp.SetParent(v);
+            tmp.SetParentChar(ch);
+            _states.push_back(tmp);
+
+            _states[v].Next()[ch] = _size;
+            ++_size;
+        }
+        v = _states[v].Next()[ch];
+    }
+    _states[v].SetLeaf(true);
+    _states[v].SetLeng((int)(s.length()));
+    _states[v].SetWord(s);
+}
+
+int ahoCorasick::GetLink(int v) {
+    if (_states[v].GetLink() == -1) {
+        if (v == 0 || _states[v].GetParent() == 0)
+            _states[v].SetLink(0);
+        else
+            _states[v].SetLink(Go(GetLink(_states[v].GetParent()), _states[v].GetParentChar()));
+    }
+    return _states[v].GetLink();
+}
+
+int ahoCorasick::Go(int v, char c) {
+    if (_states[v].Go().count(c) == 0) {
+        if (_states[v].Next().count(c) != 0) {
+            _states[v].Go()[c] = _states[v].Next()[c];
+        } else {
+            if (v == 0) {
+                _states[v].Go()[c] = 0;
+            } else {
+                _states[v].Go()[c] = Go(GetLink(v), c);
+            }
+        }
+    }
+    return _states[v].Go()[c];
+}
+
+std::vector<std::pair<std::string, std::set<int> > > ahoCorasick::CountEntry(const std::string& s) {
+    std::map<std::string, std::set<int> > tmp_res;
+    int v = 0;
+    for (int i = 0; i < (int)s.size(); ++i) {
+        v = Go(v, s[i]);
+        for (int tmp = v; tmp > 0; tmp = GetLink(tmp))
+            if (_states[tmp].GetLeaf() == true)
+                tmp_res[_states[tmp].GetWord()].insert(i-_states[tmp].GetLeng() + 1);
+    }
+    std::vector<std::pair<std::string, std::set<int> > > res;
+    for (auto it : tmp_res)
+        res.push_back(it);
+    std::sort(res.begin(), res.end(), [](std::pair<std::string, std::set<int> > a, std::pair<std::string, std::set<int> > b) {
+        return *(b.second.begin()) > *(a.second.begin());
+    });
+    return res;
+}
+
+#endif // ahoCorasick_CPP

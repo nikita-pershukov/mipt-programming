@@ -1,0 +1,98 @@
+#ifndef FLOW_CPP
+#define FLOW_CPP
+
+#include "flow.h"
+
+// constructor -------------------------------------------------------------------------
+
+minCostFlow::minCostFlow(int n): _data(ribs (n, std::vector<std::pair<double, double> >(n,std::pair<double, double> ()))) {
+
+}
+
+// add edge -------------------------------------------------------------------------
+
+void minCostFlow::AddEdge(int from, int to, double cap, double cost) {
+    _data[from][to] = {cap, cost};
+    _data[to][from] = {0, -cost};
+}
+
+// get -------------------------------------------------------------------------
+
+int minCostFlow::GetSize() {
+    return static_cast<int>(_data.size());
+}
+
+void minCostFlow::GetPath(ribs& flow, std::vector<int>& dist, std::vector<int>& path, double& df, int s, int t) {
+    dist = std::vector<int> (GetSize(), kInf);
+    std::vector<int> pred(GetSize(), kInf);
+    dist[s] = 0;
+    for (int i = 0; i < GetSize(); ++i)
+        for (int v = 0; v < GetSize(); ++v)
+            for (int u = 0; u < GetSize(); ++u) {
+                static std::pair<double, double> tmp (0, 0);
+                if (_data[u][v] != tmp && flow[u][v].second < _data[u][v].first && dist[v] > dist[u] + _data[u][v].second) {
+                    dist[v] = dist[u] + _data[u][v].second;
+                    pred[v] = u;
+                }
+            }
+    path.clear();
+    if (dist[t] >= kInf)
+        return;
+    df = kInf;
+    for (int i = t; i != s; i = pred[i]) {
+        path.push_back(i);
+        if (df > flow[pred[i]][i].first-flow[pred[i]][i].second)
+            df = flow[pred[i]][i].first-flow[pred[i]][i].second;
+    }
+    path.push_back(s);
+}
+
+// flow -------------------------------------------------------------------------
+
+std::pair<double, double> minCostFlow::Flow(int s, int t, double max_flow) {
+    ribs flow(_data);
+    for (int i = 0; i < GetSize(); ++i)
+        for (int j = 0; j < GetSize(); ++j)
+            flow[i][j].second = 0;
+    std::vector<int> path;
+    std::vector<int> dist;
+    double curflow = 0;
+    double flow_cost = 0;
+    double df = 0;
+    while (curflow < max_flow) {
+        GetPath(flow, dist, path, df, s, t);
+        if (dist[t] == kInf)
+            break;
+        int psize = static_cast<int>(path.size());
+        for (int i = 0; i < psize-1; ++i) {
+            int from = path[psize-i-1];
+            int to = path[psize-i-2];
+            flow[from][to].second += df;
+            flow[to][from].second -= df;
+            flow_cost += _data[from][to].second * df;
+        }
+        curflow += df;
+    }
+    return {curflow, flow_cost};
+}
+
+// istream >> -------------------------------------------------------------------------
+
+minCostFlow& operator>>(std::istream& stream, minCostFlow& flow) {
+    int quant;
+    stream >> quant;
+    for (int i = 0; i < quant; ++i) {
+        static int from;
+        stream >> from;
+        static int to;
+        stream >> to;
+        static double cap;
+        stream >> cap;
+        static double cost;
+        stream >> cost;
+        flow.AddEdge(from, to, cap, cost);
+    }
+    return flow;
+}
+
+#endif // FLOW_CPP

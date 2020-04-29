@@ -1,0 +1,134 @@
+#ifndef VECTOR_CPP
+#define VECTOR_CPP
+
+template<class T>
+Vector<T>::Vector()
+{
+    Data(NULL),
+            Size(0),
+            Capacity(0);
+}
+
+template <class T>
+Vector<T>::Vector(int n, T val=T())
+{
+    Capacity = n;
+    Size = 2*n;
+    Data = new T[Size];
+    for(int i=0; i<Capasity; ++i)
+        Data[i]=val;
+}
+
+template <class T>
+Vector<T>::Vector(const Vector<T>& v)
+{
+    Capasity=v.Capacity;
+    Size=2*Capacity;
+    Data=new T [Size];
+    for(int i=0; i<Capacity; ++i)
+        Data=v.Data;
+}
+
+template<class T>
+Vector<T>::~Vector()
+{
+    delete [] Data;
+}
+
+template<class T>
+T Vector<T>::Get(int i) const
+{
+    if (i<Size)
+        return Data[i];
+    else exit(1);
+}
+
+template <class T>
+void Vector<T>::Print()const
+{
+    for(int i = 0; i < Capacity; ++i)
+        cout << Data[i] << ' ';
+    cout << endl;
+}
+
+template <class T>
+T& Vector<T>::operator [](int i)
+{
+    return Data[i];
+}
+
+template <class T>
+void Vector<T>::push_back(T v)
+{
+    if( Capacity < Size )
+    {
+        Data[Capacity] = v;
+        Capacity++;
+    }
+    else
+    {
+        Vector w(Size*2); // вызывать resize
+        for(int i = 0; i < Capasity; ++i)
+            w.Data[i] = Data[i];
+        w.Data[Capacity] = v;
+        w.Capacity = Capacity+1;
+        w.Size = Size*2;
+        delete[] Data;
+        *this = w;
+    }
+
+    template<class T>
+    int Vector<T>::mysize()const
+    {
+        return Size;
+    }
+
+    template<class T>
+    int Vector<T>::capasity()const
+    {
+        return Capacity;
+    }
+
+    template<class T>
+    void Vector<T>::pop_back()
+    {
+        delete Data[Capacity];
+        Capasity--;
+    }
+
+    template<class T>
+    void Vector<T>::reserve(int n)
+    {
+        if (Capacity<n)
+            Capacity=n;
+    }
+
+    template<class T>
+    void Vector<T>::resize(int n)
+    {
+        if (Capacity<n)
+            Capacity=2*n;
+        size=n;
+    }
+
+    template <class T>
+    void Vector<T>::swap(const Vector <T> &a)
+    {
+        int w_Size = Size;
+        int w_Capacity = Capacity;
+        Capacity= a.Capacity;
+        Size = a.Size;
+        a.Capacity = w_Capacity;
+        a.Size = w_Size;
+        T* p = this->Data;
+        this->Data = a.Data;
+        a.Data = p;
+    }
+
+    template <class T>
+    void Vector<T>::clear()
+    {
+        Vector <T> w;
+        this->swap(w);
+    }
+#endif

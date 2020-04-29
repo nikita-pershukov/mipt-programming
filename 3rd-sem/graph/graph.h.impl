@@ -1,0 +1,455 @@
+#ifndef GRAPH_CPP
+#define GRAPH_CPP
+
+#include "graph.h"
+
+// constructor -------------------------------------------------------------------------
+
+template <typename V, typename W, bool R>
+graph<V, W, R>::graph(int n): _n(n), _oriented(R), _data(std::vector<vertex<V, W> >(n)) {
+
+}
+
+template <typename V, typename W, bool R>
+graph<V, W, R>::graph(const graph<V, W, R>& g): _data(g._data), _n(g._n), _oriented(g._oriented),
+_vect(g._vect)  {
+
+}
+
+// exist -------------------------------------------------------------------------
+
+template <typename V, typename W, bool R>
+bool graph<V, W, R>::ExistValue(V value) {
+    return _vect.find(value) != _vect.end();
+}
+
+template <typename V, typename W, bool R>
+bool graph<V, W, R>::ExistEdge(int from, int to) {
+    auto it = _data[from]._neigh.begin();
+    for (; it != _data[from]._neigh.end(); ++it)
+        if (it->first == to) break;
+    return it != _data[from]._neigh.end();
+}
+
+// add -------------------------------------------------------------------------
+
+template <typename V, typename W, bool R>
+void graph<V, W, R>::AddVertex(int a, vertex<V, W>& v) {
+    if (!ExistValue(v._value)) {
+        if (_n < a + 1) {
+            _n = 1 + 2 * a;
+            _data.resize(_n);
+            v._exist = true;
+            _data[a] = v;
+            _vect.insert(std::pair<V, int>(v._value, a));
+        } else {
+            v._exist = true;
+            _data[a] = v;
+            _vect.insert(std::pair<V, int>(v._value, a));
+        }
+    }
+}
+
+template <typename V, typename W, bool R>
+void graph<V, W, R>::AddVertex(int a, V value) {
+    if (!ExistValue(value)) {
+        if (_n < a + 1) {
+            _n = 1 + 2 * a;
+            _data.resize(_n);
+            vertex<V, W> v(value);
+            v._exist = true;
+            _data[a] = v;
+            _vect.insert(std::pair<V, int>(value, a));
+        } else {
+            vertex<V, W> v(value);
+            v._exist = true;
+            _data[a] = v;
+            _vect.insert(std::pair<V, int>(value, a));
+        }
+    }
+}
+
+template <typename V, typename W, bool R>
+void graph<V, W, R>::AddEdge(int a, int b) {
+    if (!ExistEdge(a, b)) {
+        if (_oriented == 1)
+            _data[a]._neigh.push_back(std::pair<int, int>(b, 0));
+        else {
+            _data[a]._neigh.push_back(std::pair<int, int>(b, 0));
+            _data[b]._neigh.push_back(std::pair<int, int>(a, 0));
+        }
+    }
+}
+
+template <typename V, typename W, bool R>
+void graph<V, W, R>::AddEdgeValue(V value1, V value2, W weight) {
+    int a = _vect.find(value1)->second;
+    int b = _vect.find(value2)->second;
+    if (!ExistEdge(a, b)) {
+        if (_oriented == 1)
+            _data[a]._neigh.push_back(std::pair<int, int>(b, weight));
+        else {
+            _data[a]._neigh.push_back(std::pair<int, int>(b, weight));
+            _data[b]._neigh.push_back(std::pair<int, int>(a, weight));
+        }
+    }
+}
+
+template <typename V, typename W, bool R>
+void graph<V, W, R>::AddEdgeValue(V value1, V value2) {
+    int a = _vect.find(value1)->second;
+    int b = _vect.find(value2)->second;
+    if (!ExistEdge(a, b)) {
+        if (_oriented == 1)
+            _data[a]._neigh.push_back(std::pair<int, int>(b, 0));
+        else {
+            _data[a]._neigh.push_back(std::pair<int, int>(b, 0));
+            _data[b]._neigh.push_back(std::pair<int, int>(a, 0));
+        }
+    }
+}
+
+// delete -------------------------------------------------------------------------
+
+template <typename V, typename W, bool R>
+void graph<V, W, R>::DeleteEdge(V value1, V value2) {
+    if (_oriented == 1) {
+        int a = _vect.find(value1)->second;
+        int b = _vect.find(value2)->second;
+        auto it = _data[a]._neigh.begin();
+        for (; it->first != b && it != _data[a]._neigh.end(); ++it);
+        if (it != _data[a]._neigh.end())
+            _data[a]._neigh.erase(it);
+    } else {
+        int a = _vect.find(value1)->second;
+        int b = _vect.find(value2)->second;
+        auto it = _data[a]._neigh.begin();
+        for (; it->first != b && it != _data[a]._neigh.end(); ++it);
+        if (it != _data[a]._neigh.end())
+            _data[a]._neigh.erase(it);
+        it = _data[b]._neigh.begin();
+        for(; it->first != a && it != _data[b]._neigh.end(); ++it);
+        if (it != _data[b]._neigh.end())
+            _data[b]._neigh.erase(it);
+    }
+}
+
+template <typename V, typename W, bool R>
+void graph<V, W, R>::DeleteVertex(V value) {
+    int a = _vect.find(value)->second;
+    _vect.erase(_vect.find(value));
+    _data[a]._value = NULL;
+    _data[a]._exist = false;
+    _data[a]._neigh.clear();
+    for (auto itdata = _data.begin(); itdata != _data.end(); ++itdata)
+        for (auto itlist = itdata->_neigh.begin(); itlist != itdata->_neigh.end(); ++itlist)
+            if (itlist->first == a)
+                itdata->_neigh.erase(itlist);
+}
+
+// tarjan -------------------------------------------------------------------------
+
+template <typename V, typename W, bool R>
+void graph<V, W, R>::StrongConnect(int a, int& ind, std::stack<int>& st, std::vector<std::set<V> >& scc) {
+    _data[a]._scc = ind;
+    _data[a]._index = ind;
+    ++ind;
+    st.push(a);
+    _data[a]._col = GRAY;
+    for (auto it : _data[a]._neigh)
+        if (_data[it.first]._index == 0) {
+            StrongConnect(it.first, ind, st, scc);
+            _data[a]._scc = std::min(_data[a]._scc, _data[it.first]._scc);
+        } else
+            if (_data[it.first]._col == GRAY)
+                _data[a]._scc = std::min(_data[a]._scc, _data[it.first]._index);
+    if (_data[a]._scc == _data[a]._index) {
+        std::set<V> tmp;
+        while (st.top() != a && st.empty() == 0) {
+            tmp.insert(_data[st.top()]._value);
+            _data[st.top()]._col = BLACK;
+            st.pop();
+        }
+        if (st.top() == a) {
+            tmp.insert(_data[a]._value);
+            _data[a]._col = BLACK;
+            st.pop();
+        }
+        scc.push_back(tmp);
+    }
+}
+
+template <typename V, typename W, bool R>
+void graph<V, W, R>::Tarjan() {
+    for (int i = 0; i < _n; ++i)
+        _data[i]._col = WHITE;
+    std::stack<int> st;
+    std::vector<std::set<V> > scc;
+    int ind = 1;
+    for (int i = 0; i < _n; ++i)
+        if (_data[i]._index == 0 && _data[i]._exist)
+            StrongConnect(i, ind, st, scc);
+    std::cout << scc.size() << std::endl;
+    std::sort(scc.begin(), scc.end(), [](std::set<V> a, std::set<V> b) {
+        if (a.size() == b.size())
+            return *(a.begin()) < *(b.begin());
+        else
+            return a.size() < b.size();
+    });
+    for (int i = 0; i < (int) scc.size(); ++i) {
+        int j = 0;
+        for (auto it : scc[i]) {
+            std::cout << it;
+            if (j != (int) scc[i].size() - 1)
+                std::cout << ' ';
+            ++j;
+        }
+        if (i != (int) scc.size() - 1)
+            std::cout << std::endl;
+    }
+}
+
+// dijkstra -------------------------------------------------------------------------
+
+template <typename V, typename W, bool R>
+void graph<V, W, R>::Dijkstra(int a) {
+    std::vector<int> dist(_n, INF);
+    dist[a] = 0;
+    auto dist_comp = [](std::pair<int, int> a, std::pair<int, int> b) {
+        return a.second < b.second;
+    };
+    std::set<std::pair<int, int>, decltype(dist_comp)> order(dist_comp);
+    order.insert({a, dist[a]});
+    while (order.empty() == 0) {
+        int myid = (order.begin())->first;
+        order.erase(order.begin());
+        for (auto it : _data[myid]._neigh)
+            if (dist[it.first] > dist[myid] + it.second) {
+                order.erase ({it.first, dist[it.first]});
+                dist[it.first] = dist[myid] + it.second;
+                order.insert({it.first, dist[it.first]});
+            }
+    }
+    int real_size = 0;
+    for (int i = 0; i < _n; ++i)
+        if (_data[i]._exist)
+            ++real_size;
+    std::cout << real_size << std::endl;
+    for (int i = 0; i < _n; ++i)
+        if (_data[i]._exist) {
+            if (dist[i] == INF)
+                std::cout << -1;
+            else
+                std::cout << dist[i];
+            if (real_size != 1)
+                std::cout << std::endl;
+            --real_size;
+        }
+}
+
+// dijkstra binomialheap -------------------------------------------------------------------------
+
+template <typename V, typename W, bool R>
+void graph<V, W, R>::DijkstraBinomialHeap(int a) {
+    std::vector<int> dist(_n, INF);
+    dist[a] = 0;
+    class Node_comp {
+    public:
+        bool operator()(std::pair<int, int> a, std::pair<int, int> b) {
+            return a.second < b.second;
+        }
+    };
+    binomialHeap<std::pair<int, int>, Node_comp> order;
+    order.Insert({a, dist[a]});
+    while (order.Empty() == 0) {
+        int myid = order.GetMinimum().first;
+        if (order.ExtractMin().second == dist[myid])
+            for (auto it : _data[myid]._neigh)
+                if (dist[it.first] > dist[myid] + it.second) {
+                    dist[it.first] = dist[myid] + it.second;
+                    order.Insert({it.first, dist[it.first]});
+                }
+    }
+    int real_size = 0;
+    for (int i = 0; i < _n; ++i)
+        if (_data[i]._exist)
+            ++real_size;
+    std::cout << real_size << std::endl;
+    for (int i = 0; i < _n; ++i)
+        if (_data[i]._exist) {
+            if (dist[i] == INF)
+                std::cout << -1;
+            else
+                std::cout << dist[i];
+            if (real_size != 1)
+                std::cout << std::endl;
+            --real_size;
+        }
+}
+
+// bellmanford -------------------------------------------------------------------------
+template <typename V, typename W, bool R>
+void graph<V, W, R>::BellmanFord(int a) {
+    std::vector<int> dist(_n, INF);
+    dist[a] = 0;
+    for (int i = 0; i < _n-1; ++i) {
+        bool change = false;
+        for (int j = 0; j < _n; ++j)
+            if (_data[j]._exist)
+                for (auto it : _data[j]._neigh)
+                    if (dist[it.first] > dist[j] + it.second) {
+                        dist[it.first] = dist[j] + it.second;
+                        change = true;
+                    }
+        if (!change)
+            break;
+    }
+    int real_size = 0;
+    for (int i = 0; i < _n; ++i)
+        if (_data[i]._exist)
+            ++real_size;
+    std::cout << real_size << std::endl;
+    for (int i = 0; i < (int) dist.size(); ++i)
+        if (_data[i]._exist) {
+            if (dist[i] == INF)
+                std::cout << "-1";
+            else
+                std::cout << dist[i];
+            if (i != (int) dist.size() - 1)
+                std::cout << std::endl;
+        }
+}
+
+// floydwarshall -------------------------------------------------------------------------
+template <typename V, typename W, bool R>
+void graph<V, W, R>::FloydWarshall() {
+    std::vector<W> tmp(_n, INF);
+    std::vector<std::vector<W> > dist(_n, tmp);
+    for (int i = 0; i < _n; ++i)
+        if (_data[i]._exist){
+            dist[i][i] = 0;
+            for (auto it : _data[i]._neigh)
+                dist[i][it.first] = it.second;
+        }
+    for (int i = 0; i < _n; ++i)
+        for (int j = 0; j < _n; ++j)
+            for (int k = 0; k < _n; ++k)
+                if (dist[j][k] > dist[j][i] + dist[i][k])
+                    dist[j][k] = dist[j][i] + dist[i][k];
+    for(int i = 0; i < _n; ++i)
+        if (_data[i]._exist) {
+            if (i == 1)
+                std::cout << "*\t";
+            std::cout << i << "\t";
+        }
+    std::cout << std::endl;
+    for (int i = 0; i < _n; ++i)
+        if (_data[i]._exist) {
+            std::cout << i << "\t";
+            for (int j = 0; j < _n; ++j)
+                if (_data[j]._exist) {
+                    if (dist[i][j] == INF)
+                        std::cout << "-1";
+                    else
+                        std::cout << dist[i][j];
+                    std::cout << "\t";
+                }
+            std::cout << std::endl;
+        }
+}
+
+// kruskal -------------------------------------------------------------------------
+template <typename V, typename W, bool R>
+void graph<V, W, R>::Kruskal() {
+    dsu<int> dis(_n);
+    int edge_count = 0;
+    W mst_cost = 0;
+    int mst_count = 0;
+    int real_size = 0;
+    int v1, v2;
+    std::pair<W, std::pair<int, int> > it;
+    auto edge_comp = [](std::pair<W, std::pair<int, int> > a, std::pair<W, std::pair<int, int> > b) {
+        if (a.first != b.first)
+            return a.first > b.first;
+        if (a.second.first != b.second.first)
+            return a.second.first > b.second.first;
+        return a.second.second > b.second.second;
+    };
+    std::priority_queue<std::pair<W, std::pair<int, int> >, std::vector<std::pair<W, std::pair<int, int> > >, decltype(edge_comp)> order(edge_comp);
+    for (int i = 0; i < _n; ++i)
+        if (_data[i]._exist)
+            for (auto it : _data[i]._neigh)
+                if (i < it.first) {
+                    order.push({it.second, {i, it.first}});
+                    ++edge_count;
+                }
+    for (int i = 0; i < _n; ++i)
+        if (_data[i]._exist) {
+            dis.MakeSet(i);
+            ++real_size;
+        }
+    for (int i = edge_count; (i > 0) && (mst_count < real_size - 1); --i) {
+        it = order.top();
+        v1 = it.second.first;
+        v2 = it.second.second;
+        order.pop();
+        if (dis.FindSet(v1) != dis.FindSet(v2)) {
+            mst_cost += it.first;
+            ++mst_count;
+            dis.Union(v1, v2);
+        }
+    }
+    std::cout << mst_cost;
+}
+
+// istream >> -------------------------------------------------------------------------
+
+template <typename V, typename W, bool R>
+std::istream& operator>>(std::istream& stream, graph<V, W, R>& g) {
+    if (g._oriented == 1) {
+        int count;
+        stream >> count;
+        for (int i = 0; i < count; ++i) {
+            V from;
+            stream >> from;
+            V to;
+            stream >> to;
+            g.AddVertex(from, from);
+            g.AddVertex(to, to);
+            W weight;
+            stream >> weight;
+            g.AddEdgeValue(from, to, weight);
+        }
+        return stream;
+    } else {
+        int count;
+        stream >> count;
+        for (int i = 0; i < count; ++i) {
+            V from;
+            stream >> from;
+            V to;
+            stream >> to;
+            g.AddVertex(from, from);
+            g.AddVertex(to, to);
+            W weight;
+            stream >> weight;
+            g.AddEdgeValue(from, to, weight);
+            g.AddEdgeValue(to, from, weight);
+        }
+        return stream;
+    }
+}
+
+// ostream << -------------------------------------------------------------------------
+
+template <typename V, typename W, bool R>
+std::ostream& operator<<(std::ostream& stream, graph<V, W, R>& g) {
+    for (int i = 0; i < g._n; ++i)
+        for (auto it : g._data[i]._neigh)
+            stream << g._data[i]._value << " -> " << g._data[it.first]._value << " w: " << it.second << std::endl;
+    return stream;
+}
+
+// -------------------------------------------------------------------------
+
+#endif // GRAPH_CPP

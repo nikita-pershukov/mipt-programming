@@ -1,0 +1,76 @@
+#ifndef BINOMAILNODE_CPP
+#define BINOMAILNODE_CPP
+
+#include "binomailnode.h"
+
+// constructor -------------------------------------------------------------------------
+
+template <typename V>
+node<V>::node() {
+
+}
+
+template <typename V>
+node<V>::node(const V key): _key(key) {
+
+}
+
+// get -------------------------------------------------------------------------
+
+template <typename V>
+node<V>* node<V>::GetChild() {
+    return _child;
+}
+
+template <typename V>
+int node<V>::GetDegree() const {
+    return _degree;
+}
+
+template <typename V>
+V node<V>::GetKey() const {
+    return _key;
+}
+
+template <typename V>
+node<V>* node<V>::GetSib() {
+    return _sib;
+}
+
+// set -------------------------------------------------------------------------
+
+template <typename V>
+void node<V>::SetChild(node* child) {
+    _child = child;
+}
+
+template <typename V>
+void node<V>::SetDegree(const int degree) {
+    _degree = degree;
+}
+
+template <typename V>
+void node<V>::SetKey(const V key) {
+    _key = key;
+}
+
+template <typename V>
+void node<V>::SetSib(node* sib) {
+    _sib = sib;
+}
+
+// inorderdelete -------------------------------------------------------------------------
+
+template <typename V>
+void node<V>::InOrderDelete()
+{
+    if (this == NULL)
+        return;
+    if (_child != NULL)
+        _child->InOrderDelete();
+    if (_sib != NULL)
+        _sib->InOrderDelete();
+    delete this;
+}
+
+#endif // BINOMAILNODE_CPP

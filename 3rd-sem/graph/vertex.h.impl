@@ -1,0 +1,20 @@
+#ifndef VERTEX_CPP
+#define VERTEX_CPP
+
+#include "vertex.h"
+
+template <typename V, typename W>
+vertex<V, W>::vertex() {}
+
+template <typename V, typename W>
+vertex<V, W>::vertex(V value): _value(value) {}
+
+template <typename V, typename W>
+void vertex<V, W>::operator=(vertex<V, W>& vert) {
+    _exist = vert._exist;
+    _value = vert._value;
+    _neigh = vert._neigh;
+    _col = vert._col;
+}
+
+#endif // VERTEX_CPP
